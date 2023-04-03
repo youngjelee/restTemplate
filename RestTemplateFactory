@@ -1,0 +1,35 @@
+public class RestTemplateFactory {
+
+    private final RestTemplate restTemplate;
+
+    public RestTemplateFactory() {
+        this.restTemplate = new RestTemplate();
+    }
+
+    public <T> T get(String url, Class<T> responseType, HttpHeaders headers, MultiValueMap<String, String> params) {
+        HttpEntity<String> httpEntity = new HttpEntity<>(headers);
+        String urlWithParams = url + "?" + params.toSingleValueMap().entrySet().stream()
+                .map(e -> e.getKey() + "=" + e.getValue())
+                .collect(Collectors.joining("&"));
+        ResponseEntity<T> response = restTemplate.exchange(urlWithParams, HttpMethod.GET, httpEntity, responseType);
+        return response.getBody();
+    }
+
+    public <T> T post(String url, Object requestBody, Class<T> responseType, HttpHeaders headers) {
+        HttpEntity<Object> httpEntity = new HttpEntity<>(requestBody, headers);
+        ResponseEntity<T> response = restTemplate.exchange(url, HttpMethod.POST, httpEntity, responseType);
+        return response.getBody();
+    }
+
+    public <T> T put(String url, Object requestBody, Class<T> responseType, HttpHeaders headers) {
+        HttpEntity<Object> httpEntity = new HttpEntity<>(requestBody, headers);
+        ResponseEntity<T> response = restTemplate.exchange(url, HttpMethod.PUT, httpEntity, responseType);
+        return response.getBody();
+    }
+
+    public <T> T delete(String url, Class<T> responseType, HttpHeaders headers) {
+        HttpEntity<String> httpEntity = new HttpEntity<>(headers);
+        ResponseEntity<T> response = restTemplate.exchange(url, HttpMethod.DELETE, httpEntity, responseType);
+        return response.getBody();
+    }
+}
