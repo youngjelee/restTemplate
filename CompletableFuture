@@ -1,0 +1,52 @@
+  @GetMapping("/test1")
+    public String test1(){
+
+        long time = System.currentTimeMillis();
+        CompletableFuture<String> future = CompletableFuture.supplyAsync(() -> {
+
+            try {
+                Thread.sleep(5000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            return "1";
+        });
+        CompletableFuture<String> future2 = CompletableFuture.supplyAsync(() -> {
+
+            try {
+                Thread.sleep(5000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            return "1";
+        });
+
+
+
+        future.join();
+        future2.join();
+
+        long time2 = System.currentTimeMillis();
+        var res = Long.toString(time2-time);
+        return res;
+
+    }
+
+
+    @GetMapping("/test2")
+    public String test2(){
+
+
+        long time = System.currentTimeMillis();
+            try {
+
+                Thread.sleep(5000);
+                Thread.sleep(5000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+
+        long time2 = System.currentTimeMillis();
+        var res = Long.toString(time2-time);
+        return res;
+    }
