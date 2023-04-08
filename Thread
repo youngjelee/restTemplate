@@ -1,0 +1,140 @@
+package com.example.demo;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
+
+
+import java.lang.management.ManagementFactory;
+import java.lang.management.ThreadInfo;
+import java.lang.management.ThreadMXBean;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
+@Slf4j
+@SpringBootTest
+//@RequiredArgsConstructor
+public class ThreadTest {
+//    threadPoolTaskExecutor = ThreadPoolTaskExecutor()
+
+    @Autowired
+    private ThreadPoolTaskExecutor tpe;
+
+    @Test
+    public void test(){
+
+        test0();
+        //test1();
+
+//        test2();
+    }
+    private void test0(){
+
+        chkTreadCnt();
+        log.info("==============================================");
+        log.info("activeCount in test0 start {}" , tpe.getActiveCount());
+        log.info("main test method== {}" , Thread.currentThread());
+        Long startTimes  = System.currentTimeMillis();
+
+//        tpe.execute(()->{this.thread1();});
+        chkTreadCnt();
+        log.info("activeCount in test0 middle {}" , tpe.getActiveCount());
+
+        ExecutorService executorService = Executors.newFixedThreadPool(2);
+        executorService.submit(() -> { thread1(); });
+        executorService.submit(() -> { thread1(); });
+        executorService.shutdown();
+
+        this.thread2();
+        this.thread3();
+
+        Long endTimes  = System.currentTimeMillis();
+
+        System.out.println("테스트 0 실행된시간 "+(endTimes-startTimes) ) ;
+        log.info("activeCount in test0 end {}" , tpe.getActiveCount());
+        log.info("==============================================");
+        chkTreadCnt();
+    }
+
+
+    private void test1 (){
+
+        chkTreadCnt();
+        log.info("==============================================");
+        log.info("activeCount in test1 start {}" , tpe.getActiveCount());
+        log.info("main test method== {}" , Thread.currentThread());
+        Long startTimes  = System.currentTimeMillis();
+
+        tpe.execute(()->{this.thread1();});
+        tpe.execute(()->{this.thread1();});
+        chkTreadCnt();
+        log.info("activeCount in test1 middle {}" , tpe.getActiveCount());
+        this.thread2();
+        this.thread3();
+
+        Long endTimes  = System.currentTimeMillis();
+
+        System.out.println("테스트 1 실행된시간 "+(endTimes-startTimes) ) ;
+        log.info("activeCount in test1 end {}" , tpe.getActiveCount());
+        log.info("==============================================");
+        chkTreadCnt();
+    }
+
+    private void test2(){
+        log.info("==============================================");
+        log.info("main test method== {}" , Thread.currentThread());
+        Long startTimes  = System.currentTimeMillis();
+
+        this.thread1();
+        this.thread2();
+        this.thread3();
+
+        Long endTimes  = System.currentTimeMillis();
+
+        System.out.println("테스트 2 실행된시간 "+(endTimes-startTimes) ) ;
+        log.info("==============================================");
+    }
+
+
+    private void thread1(){
+        log.info("activeCount in thread1 {}" , tpe.getActiveCount());
+        sleep(1000);
+        log.info("thread1 == {}" , Thread.currentThread());
+    }
+    private void thread2(){
+        sleep(1000);
+        log.info("thread2 == {}" , Thread.currentThread());
+    }
+    private void thread3(){
+        sleep(1000);
+        log.info("thread3 == {}" , Thread.currentThread());
+    }
+
+
+
+    private void sleep(long mil){
+        try {
+            Thread.sleep(mil);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void chkTreadCnt(){
+        ThreadMXBean threadMXBean = ManagementFactory.getThreadMXBean();
+        ThreadInfo[] threadInfos = threadMXBean.dumpAllThreads(true, true);
+
+        int i = 0 ;
+        for (ThreadInfo threadInfo : threadInfos) {
+            System.out.println(i +"========Thread name: " + threadInfo.getThreadName()
+                    + ", Thread state: " + threadInfo.getThreadState());
+            i++;
+        }
+
+    }
+
+
+}
