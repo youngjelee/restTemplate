@@ -1,0 +1,116 @@
+ @Scheduled(cron = "0 0/1 * * * *")
+    public void test6() throws InterruptedException, ExecutionException {
+
+        Long startTimes  = System.currentTimeMillis();
+
+        System.out.println("=======================================test6 Start");
+        System.out.println(Thread.currentThread());
+        Thread.sleep(10000);
+
+
+        System.out.println(Thread.currentThread());
+        List list  = new ArrayList();
+        for(int i = 0 ;  i <1000; i++){
+            list.add(i+1);
+        }
+        List<List<Integer>> partList = splitListIntoSublists(list);
+
+        List<CompletableFuture> comList = new ArrayList<>();
+
+        for(List<Integer>  li : partList){
+            CompletableFuture<List> future = CompletableFuture.supplyAsync(()->{
+                try {
+                    Thread.sleep(10000);
+                    System.out.println(Thread.currentThread());
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                List<String> listStr = new ArrayList<>();
+                for(Integer in: li){
+                    listStr.add("test" + in.toString());
+                }
+                System.out.println("등록");
+                return listStr;
+            });
+            comList.add(future);
+        }
+
+        CompletableFuture<Void> allFutures = CompletableFuture.allOf(comList.toArray(new CompletableFuture[comList.size()]));
+
+
+        List<String> combinedList = new ArrayList<>();
+
+
+        CompletableFuture<List<String>> combinedFuture  = allFutures.thenApply(v -> {
+
+            for (CompletableFuture<List> future : comList) {
+                try {
+                    List<String> resultList = future.get(); // get() method waits for future to complete and returns its result
+                    combinedList.addAll(resultList);
+                } catch (InterruptedException | ExecutionException e) {
+                    e.printStackTrace();
+                }
+            }
+           Long endTimes  = System.currentTimeMillis();
+
+           System.out.println(combinedList);
+           System.out.println("메소드 걸린시간:::" +  (endTimes-startTimes));
+            return combinedList;
+        });
+
+        System.out.println("결과? ㅋ" + combinedFuture.get());
+
+
+
+    }
+    
+        private List<List<Integer>> splitListIntoSublists(List<Integer> list) {
+        List<List<Integer>> sublists = new ArrayList<>();
+
+        for (int i = 0; i < list.size(); i += 10) {
+            int endIndex = Math.min(i + 10, list.size());
+            sublists.add(list.subList(i, endIndex));
+        }
+
+        return sublists;
+    }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    ========================================================
+    
+    
+    
+    package com.example.demo.config;
+
+import org.springframework.context.annotation.Configuration;
+import org.springframework.scheduling.annotation.SchedulingConfigurer;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
+import org.springframework.scheduling.config.ScheduledTaskRegistrar;
+
+@Configuration
+public class SchedulerConfig implements SchedulingConfigurer {
+    private final int POOL_SIZE = 10;
+
+    @Override
+    public void configureTasks(ScheduledTaskRegistrar scheduledTaskRegistrar) {
+        // [스레드 풀을 사용해서 모든 예약된 스케줄 작업이 실행되도록 설정]
+        // [스프링에서는 스케줄링 작업은 한개의 스레드 풀에서 실행되기때문에 >> 다중 동시 실행을 위해서 스레드 풀 설정 실시]
+        ThreadPoolTaskScheduler threadPoolTaskScheduler = new ThreadPoolTaskScheduler();
+
+        threadPoolTaskScheduler.setPoolSize(POOL_SIZE);
+//        threadPoolTaskScheduler.setQ
+        threadPoolTaskScheduler.setThreadNamePrefix("scheduled-task-pool-");
+        threadPoolTaskScheduler.initialize();
+
+        scheduledTaskRegistrar.setTaskScheduler(threadPoolTaskScheduler);
+    }
+}
+
+    
