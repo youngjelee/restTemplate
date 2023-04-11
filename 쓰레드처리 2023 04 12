@@ -1,0 +1,221 @@
+package com.example.demo.schedule;
+
+import jakarta.annotation.PostConstruct;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
+import org.springframework.stereotype.Component;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Random;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+
+
+@Component
+@Slf4j
+public class ScheduleService {
+
+
+    @PostConstruct
+    public void init() throws ExecutionException, InterruptedException {
+        this.test6();
+        this.test7();
+    }
+//    @Scheduled(cron = "0 0/1 * * * *")
+//    public void test1() throws InterruptedException {
+//        System.out.println("=======================================test 1 Start");
+//        System.out.println(Thread.currentThread());
+//        Thread.sleep(10000);
+//    }
+//    @Scheduled(cron = "0 0/1 * * * *")
+//    public void test2() throws InterruptedException {
+//        System.out.println("=======================================test2 Start");
+//        System.out.println(Thread.currentThread());
+//        Thread.sleep(10000);
+//    }
+//    @Scheduled(cron = "0 0/1 * * * *")
+//    public void test3() throws InterruptedException {
+//        System.out.println("=======================================test3 Start");
+//        System.out.println(Thread.currentThread());
+//        Thread.sleep(10000);
+//    }
+//    @Scheduled(cron = "0 0/1 * * * *")
+//    public void test4() throws InterruptedException {
+//        System.out.println("=======================================test4 Start");
+//        System.out.println(Thread.currentThread());
+//        Thread.sleep(10000);
+//    }
+//    @Scheduled(cron = "0 0/1 * * * *")
+//    public void test5() throws InterruptedException {
+//        System.out.println("=======================================test5 Start");
+//        System.out.println(Thread.currentThread());
+//        Thread.sleep(10000);
+//    }
+//    @Scheduled(cron = "0 0/1 * * * *")
+    public void test6() throws InterruptedException, ExecutionException {
+
+        Long startTimes  = System.currentTimeMillis();
+
+        System.out.println("=======================================test6 Start");
+        System.out.println(Thread.currentThread());
+//        Thread.sleep(10000);
+
+
+        System.out.println(Thread.currentThread());
+        List list  = new ArrayList();
+        for(int i = 0 ;  i <1000; i++){
+            list.add(i+1);
+        }
+        List<List<Integer>> partList = splitListIntoSublists(list);
+
+        List<CompletableFuture> comList = new ArrayList<>();
+
+        for(List<Integer>  li : partList){
+//            int i = 0 ;
+            CompletableFuture<List> future = CompletableFuture.supplyAsync(()->{
+
+//            System.out.println("실행이되야돼 이건 그래야 효율이나와");
+//                if(getRandDom()<5){
+//                    sleep(1000);
+//                }
+
+                List<String> listStr = new ArrayList<>();
+
+                for(Integer in: li){
+                    listStr.add("test" + in.toString());
+                }
+
+                return listStr;
+            });
+            comList.add(future);
+        }
+
+        CompletableFuture<Void> allFutures = CompletableFuture.allOf(comList.toArray(new CompletableFuture[comList.size()]));
+        allFutures.join();
+
+
+
+        List<String> combinedList = new ArrayList<>();
+
+        for (CompletableFuture<List> future : comList) {
+            List<String> resultList = future.join(); // 각각의 결과를 가져옴
+            combinedList.addAll(resultList);
+        }
+
+        Long endTimes  = System.currentTimeMillis();
+
+
+        log.info("결과6 걸린시간 {} {}" , (endTimes-startTimes) , combinedList);
+
+
+
+    }
+
+
+
+
+//    @Scheduled(cron = "0 0/1 * * * *")
+    public void test7() throws InterruptedException, ExecutionException {
+
+        Long startTimes  = System.currentTimeMillis();
+
+        System.out.println("=======================================test6 Start");
+        System.out.println(Thread.currentThread());
+//        Thread.sleep(10000);
+
+
+        System.out.println(Thread.currentThread());
+        List list  = new ArrayList();
+        for(int i = 0 ;  i <1000; i++){
+            list.add(i+1);
+        }
+        List<List<Integer>> partList = splitListIntoSublists(list);
+
+        List<CompletableFuture> comList = new ArrayList<>();
+
+        for(List<Integer>  li : partList){
+            CompletableFuture<List> future = CompletableFuture.supplyAsync(()->{
+//                try {
+//                    Thread.sleep(10000);
+//                    System.out.println(Thread.currentThread());
+//                } catch (InterruptedException e) {
+//                    e.printStackTrace();
+//                }
+                List<String> listStr = new ArrayList<>();
+                for(Integer in: li){
+                    listStr.add("test" + in.toString());
+                }
+                System.out.println("등록");
+                return listStr;
+            });
+            comList.add(future);
+        }
+
+        CompletableFuture<Void> allFutures = CompletableFuture.allOf(comList.toArray(new CompletableFuture[comList.size()]));
+
+
+        List<String> combinedList = new ArrayList<>();
+
+
+        CompletableFuture<List<String>> combinedFuture  = allFutures.thenApply(v -> {
+
+            for (CompletableFuture<List> future : comList) {
+                try {
+                    List<String> resultList = future.get(); // get() method waits for future to complete and returns its result
+                    combinedList.addAll(resultList);
+                } catch (InterruptedException | ExecutionException e) {
+                    e.printStackTrace();
+                }
+            }
+
+
+            System.out.println(combinedList);
+
+            return combinedList;
+        });
+        Long endTimes  = System.currentTimeMillis();
+        System.out.println("메소드 걸린시간:::" +  (endTimes-startTimes));
+        System.out.println("결과7 걸린시간 "  +(endTimes-startTimes)    + combinedFuture.get());
+
+
+
+    }
+
+
+
+
+    private List<List<Integer>> splitListIntoSublists(List<Integer> list) {
+        List<List<Integer>> sublists = new ArrayList<>();
+
+        for (int i = 0; i < list.size(); i += 10) {
+            int endIndex = Math.min(i + 10, list.size());
+            sublists.add(list.subList(i, endIndex));
+        }
+
+        return sublists;
+    }
+
+
+    private void sleep(long mil) {
+
+        try {
+            Thread.sleep(mil);
+//            System.out.println(Thread.currentThread());
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private int getRandDom(){
+        Random random = new Random();
+        int randomNumber = random.nextInt(10) + 1; // 1부터 10까지의 숫자를 랜덤하게 가져옴
+        return randomNumber;
+
+    }
+
+
+}
